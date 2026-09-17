@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask-db
+  template:
+    metadata:
+      labels:
+        app: flask-db
+    spec:
+      containers:
+      - name: flask-db
+        image: mysql:8.0
+        ports:
+        - containerPort: 3306
+        env:
+          - name: MYSQL_DATABASE
+            valueFrom:
+              configMapKeyRef:
+                name: app-config        #CONFIG MAP NAME
+                key: DB_NAME
+          - name: MYSQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: app-secret        #SECRET NAME
+                key: DB_USER
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: app-secret        #SECRET NAME
+                key: DB_PASSWORD
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: app-secret        #SECRET NAME
+                key: DB_ROOT_PASSWORD
+        volumeMounts:
+          - name: init-sql              #DATA of dbinitsql use volume when we need to insert data from configmap to container
+            mountPath: /docker-entrypoint-initdb.d/init.sql
+            subPath: init.sql
+          - name: mysql-pvc
+            mountPath: /var/lib/mysql
+      volumes:
+        - name: init-sql
+          configMap:
+            name: db-init-sql
+        - name: mysql-pvc
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-db
+spec:
+  selector:
+    app: flask-db
+  ports:
+    - port: 3306
+      targetPort: 3306
+  
