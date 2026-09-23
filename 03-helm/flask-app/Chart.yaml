@@ -2,4 +2,4 @@ apiVersion: v2
 name: flask-app
 description: helm chart for flask-app
 version: 0.3.0
-appVersion: "2.0"
+appVersion: "3.0"
